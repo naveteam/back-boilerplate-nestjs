@@ -1,0 +1,17 @@
+.dockerignore
+.env
+.git
+.gitignore
+.vscode
+*/bin
+*/obj
+data
+dist
+docker-compose*
+Dockerfile*
+LICENSE
+node_modules
+npm-debug.log
+README.md
+volumes
+Recolher
