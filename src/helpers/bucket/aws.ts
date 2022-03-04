@@ -28,23 +28,22 @@ export const uploadDirToS3 = async (s3Path: string) => {
   const mainFolderName = v4();
 
   const getFiles = async (dir: string): Promise<string | string[]> => {
-    const dirents = await fs.readdir(dir, { withFileTypes: true });
+    const directory = await fs.readdir(dir, { withFileTypes: true });
     const files = await Promise.all(
-      dirents.map((dirent) => {
-        const res = path.resolve(dir, dirent.name);
-        return dirent.isDirectory() ? getFiles(res) : res;
+      directory.map((directory) => {
+        const res = path.resolve(dir, directory.name);
+        return directory.isDirectory() ? getFiles(res) : res;
       }),
     );
     return Array.prototype.concat(...files);
   };
 
   const files = (await getFiles(s3Path)) as string[];
-  const uploads = Promise.all(
-    files.map((filePath) => {
+  const uploads = await Promise.all(
+    files.map(async (filePath) => {
       const bucketPath = filePath.substring(s3Path.length - 1);
       const contentTypeFile = mime.lookup(filePath);
 
-      //Key: path.relative(s3Path, filePath)
       const params = {
         Bucket: AWS_BUCKET,
         Key: `${mainFolderName}${bucketPath}`,
@@ -52,27 +51,12 @@ export const uploadDirToS3 = async (s3Path: string) => {
         ContentType: contentTypeFile !== false ? contentTypeFile : '',
       };
 
-      return s3
-        .upload(params, function (err, data) {
-          if (err) {
-            console.log(err);
-          } else {
-            console.log(
-              'Successfully uploaded ' +
-                path.relative(s3Path, filePath) +
-                ' to ' +
-                AWS_BUCKET,
-            );
-            console.log('Uploaded em: ', data.Location);
-            console.log('Chave: ', data.key);
+      const result = await s3.upload(params).promise();
 
-            return { Location: data.Location, key: data.key };
-          }
-        })
-        .promise();
+      return { Location: result.Location, key: result.Key };
     }),
   );
-  return Promise.all(await uploads);
+  return uploads;
 };
 
 export const searchFileArrayToS3 = (arrayFiles: any[], nameFile: string) =>
