@@ -5,3 +5,5 @@ export * from './pagination';
 export * from './processOrderBy';
 export * from './auth';
 export * from './password';
+export * from './file';
+export * from './bucket';
